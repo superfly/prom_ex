@@ -503,9 +503,6 @@ defmodule PromEx do
 
   @doc false
   def metrics_server_child_spec(acc, config, prom_ex_module, process_name) when is_map(config) do
-    transport_options = [num_acceptors: config.pool_size]
-    cowboy_opts = Keyword.drop(config.cowboy_opts, [:port, :transport_options])
-
     port =
       case Map.fetch(config, :port) do
         {:ok, port} when is_integer(port) ->
@@ -552,13 +549,7 @@ defmodule PromEx do
 
     plug_definition = {PromEx.MetricsServer.Plug, plug_opts}
 
-    spec =
-      Plug.Cowboy.child_spec(
-        ref: process_name,
-        scheme: scheme,
-        plug: plug_definition,
-        options: [{:port, port}, {:transport_options, transport_options} | cowboy_opts]
-      )
+    spec = server_spec(plug_definition, port, scheme, process_name, config)
 
     Logger.info(
       "PromEx is starting a standalone metrics server on port #{inspect(port)} over #{Atom.to_string(scheme)}"
@@ -569,6 +560,15 @@ defmodule PromEx do
 
   def metrics_server_child_spec(acc, :disabled, _prom_ex_module, _process_name) do
     acc
+  end
+
+  @doc false
+  def server_spec(plug_definition, port, scheme, _process_name, config) do
+    bandit_opts = Keyword.drop(config.bandit_opts, [:scheme, :plug, :port])
+
+    Bandit.child_spec(
+      [scheme: scheme, plug: plug_definition, port: port] ++ bandit_opts
+    )
   end
 
   @doc false

@@ -46,8 +46,7 @@ defmodule PromEx.Config do
       port: 4021,
       path: "/metrics", # This is an optional setting and will default to `"/metrics"`
       protocol: :http, # This is an optional setting and will default to `:http`
-      pool_size: 5, # This is an optional setting and will default to `5`
-      cowboy_opts: [], # This is an optional setting and will default to `[]`
+      bandit_opts: [], # This is an optional setting and will default to `[]`
       auth_strategy: :none # This is an optional and will default to `:none`
     ]
   ```
@@ -198,17 +197,14 @@ defmodule PromEx.Config do
       * all of these keys, and any additional ones, will be provided as EEx vars to the template file.
 
   * `:metrics_server` - This key contains the configuration information needed to run a standalone
-    HTTP server powered by Cowboy. This server provides a lightweight solution to serving up PromEx
-    metrics. In order to use this standalone metrics server plug you need to have `:plug` and `:plug_cowboy`
-    as dependencies in your project. Its configuration options are:
+    HTTP server powered by Bandit. This server provides a lightweight solution to serving up PromEx
+    metrics. Bandit is required as a dependency in your project. Its configuration options are:
 
-    * `:port` - The port that the Cowboy HTTP server should run on.
+    * `:port` - The port that the Bandit HTTP server should run on.
 
     * `:path` - The path that the metrics should be accessible at.
 
     * `:protocol` - The protocol that the metrics should be accessible over (`:http` or `:https`).
-
-    * `:pool_size` - How many Cowboy processes should be in the pool to handle metrics related requests.
 
     * `:auth_strategy` - What authentication strategy should be used to authorize requests to your metrics. The
       Supported strategies are `:none`, `:bearer`, and `:basic`. Depending on what strategy is selected, you
@@ -225,10 +221,12 @@ defmodule PromEx.Config do
     * `:auth_password` - When using a `:bearer` authentication strategy, this field is required to validate the
       incoming request against a valid password.
 
-    * `:cowboy_opts` - A keyword list of any additional options that should be passed to `Plug.Cowboy` (see
-      docs for more information https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html). The `:port` and
-      `:transport_options` options are handled by PromEx via the aforementioned config settings and so
-      adding them again here has no effect.
+    * `:bandit_opts` - A keyword list of any additional options that should be passed to `Bandit.child_spec/1`
+      (see https://hexdocs.pm/bandit/Bandit.html#t:options/0). The `:scheme`, `:plug`, and `:port` options
+      are handled by PromEx via the aforementioned config settings and so adding them again here has no
+      effect. Useful for passing through transport-level options, e.g.
+      `bandit_opts: [thousand_island_options: [transport_options: [reuseport: true, reuseaddr: true]]]`
+      to allow the metrics listener to bind alongside an existing peer during a blue/green hot deploy.
   """
 
   @typedoc """
@@ -238,7 +236,7 @@ defmodule PromEx.Config do
   - `ets_flush_interval`: How often should the ETS buffer table be compacted.
   - `grafana_config`: A map containing all the relevant settings to connect to Grafana.
   - `grafana_agent_config`: A map containing all the relevant settings to connect to GrafanaAgent.
-  - `metrics_server_config`: A map containing all the relevant settings to start a standalone HTTP Cowboy server for metrics.
+  - `metrics_server_config`: A map containing all the relevant settings to start a standalone HTTP Bandit server for metrics.
   """
 
   alias PromEx.GrafanaAgent.Downloader
@@ -379,8 +377,7 @@ defmodule PromEx.Config do
       port: get_metrics_server_config(metrics_server_opts, :port),
       path: Keyword.get(metrics_server_opts, :path, "/metrics"),
       protocol: Keyword.get(metrics_server_opts, :protocol, :http),
-      pool_size: Keyword.get(metrics_server_opts, :pool_size, 5),
-      cowboy_opts: Keyword.get(metrics_server_opts, :cowboy_opts, []),
+      bandit_opts: Keyword.get(metrics_server_opts, :bandit_opts, []),
       auth_strategy: Keyword.get(metrics_server_opts, :auth_strategy, :none)
     }
 

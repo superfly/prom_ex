@@ -156,5 +156,26 @@ defmodule PromEx.ConfigTest do
         ]
       )
     end
+
+    test "metrics_server defaults to empty bandit_opts" do
+      %PromEx.Config{metrics_server_config: server_config} = Config.build(metrics_server: [port: 8080])
+
+      assert server_config.bandit_opts == []
+      refute Map.has_key?(server_config, :cowboy_opts)
+      refute Map.has_key?(server_config, :pool_size)
+    end
+
+    test "metrics_server forwards bandit_opts verbatim" do
+      bandit_opts = [
+        thousand_island_options: [
+          transport_options: [reuseport: true, reuseaddr: true]
+        ]
+      ]
+
+      %PromEx.Config{metrics_server_config: server_config} =
+        Config.build(metrics_server: [port: 8080, bandit_opts: bandit_opts])
+
+      assert server_config.bandit_opts == bandit_opts
+    end
   end
 end
