@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — superfly Bandit-only fork
+
+### Changed
+
+- **Breaking:** the standalone metrics server is now Bandit-only. `Plug.Cowboy` support has been removed
+  along with the `:cowboy_opts` and `:pool_size` config keys. `:bandit` is now a required dependency.
+- Adds a new `:bandit_opts` keyword in `metrics_server` config that is spliced into `Bandit.child_spec/1`.
+  Use it to pass through Thousand Island transport options, e.g. `bandit_opts: [thousand_island_options:
+  [transport_options: [reuseport: true, reuseaddr: true]]]` to allow the listener to bind alongside an
+  existing peer during a blue/green hot deploy.
+
+### Merged from upstream
+
+- [#266](https://github.com/akoutmos/prom_ex/pull/266) — initial Bandit support for the metrics server.
 
 ## [1.11.0] - 2024-10-24
 
